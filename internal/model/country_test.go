@@ -1,18 +1,18 @@
-package entity_test
+package model_test
 
 import (
 	"testing"
 
-	"github.com/pkarmon/swiftcodes/internal/entity"
+	"github.com/pkarmon/swiftcodes/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCountry_ValidatesEmptyName(t *testing.T) {
 	t.Parallel()
 
-	code, err := entity.NewCountryISO2("PL")
+	code, err := model.NewCountryISO2("PL")
 	assert.NoError(t, err)
-	country, err := entity.NewCountry(code, "")
+	country, err := model.NewCountry(code, "")
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "country name cannot be empty")
@@ -22,9 +22,9 @@ func TestCountry_ValidatesEmptyName(t *testing.T) {
 func TestCountry_ConvertsNameToUppercase(t *testing.T) {
 	t.Parallel()
 
-	code, err := entity.NewCountryISO2("PL")
+	code, err := model.NewCountryISO2("PL")
 	assert.NoError(t, err)
-	country, err := entity.NewCountry(code, "poland")
+	country, err := model.NewCountry(code, "poland")
 
 	assert.NoError(t, err)
 	assert.NotNil(t, country)

@@ -1,9 +1,9 @@
-package entity_test
+package model_test
 
 import (
 	"testing"
 
-	"github.com/pkarmon/swiftcodes/internal/entity"
+	"github.com/pkarmon/swiftcodes/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -71,7 +71,7 @@ func TestNewBankUnit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			got, err := entity.NewBankUnit(tt.swiftCode, tt.countryISO2, tt.address, tt.bankName, tt.isHeadquarter)
+			got, err := model.NewBankUnit(tt.swiftCode, tt.countryISO2, tt.address, tt.bankName, tt.isHeadquarter)
 
 			if tt.wantErr != "" {
 				assert.Error(t, err)

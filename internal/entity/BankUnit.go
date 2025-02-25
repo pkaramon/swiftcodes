@@ -8,24 +8,24 @@ import (
 
 type BankUnit struct {
 	SwiftCode     SwiftCode
-	Country       *Country
-	CountryName   string
+	CountryISO2   CountryISO2
 	Address       string
 	Name          string
 	IsHeadquarter bool
 }
 
-func NewBankUnit(swiftCode string, countryISO2 string, countryName, address, name string, isHeadquarter bool) (*BankUnit, error) {
-	sc, err := NewSwiftCode(swiftCode)
-	if err != nil {
-		return nil, err
-	}
-	country, err := NewCountry(countryISO2, countryName)
+func NewBankUnit(swiftCode string, countryISO2 string, address, name string, isHeadquarter bool) (*BankUnit, error) {
+	codeISO2, err := NewCountryISO2(countryISO2)
 	if err != nil {
 		return nil, err
 	}
 
-	if sc.CountryISO2() != country.CodeISO2 {
+	sc, err := NewSwiftCode(swiftCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if sc.CountryISO2() != codeISO2.code {
 		return nil, errors.New("swift code and country ISO2 code mismatch")
 	}
 
@@ -37,14 +37,9 @@ func NewBankUnit(swiftCode string, countryISO2 string, countryName, address, nam
 		return nil, errors.New("name cannot be empty")
 	}
 
-	if len(countryName) == 0 {
-		return nil, errors.New("country name cannot be empty")
-	}
-
 	return &BankUnit{
 		SwiftCode:     sc,
-		Country:       country,
-		CountryName:   strings.ToUpper(countryName),
+		CountryISO2:   codeISO2,
 		Address:       address,
 		Name:          name,
 		IsHeadquarter: isHeadquarter,
@@ -70,21 +65,20 @@ func (s SwiftCode) BranchCode() string {
 	return s.s[8:11]
 }
 
-type Country struct {
-	CodeISO2 string
-	Name     string
+type CountryISO2 struct {
+	code string
 }
 
-func NewCountry(codeISO2 string, name string) (*Country, error) {
+func NewCountryISO2(codeISO2 string) (CountryISO2, error) {
 	if len(codeISO2) != 2 {
-		return nil, fmt.Errorf("country ISO2 code length must be 2 characters")
-	}
-	if len(name) == 0 {
-		return nil, fmt.Errorf("country name cannot be empty")
+		return CountryISO2{}, fmt.Errorf("country ISO2 code length must be 2 characters")
 	}
 
-	return &Country{
-		CodeISO2: strings.ToUpper(codeISO2),
-		Name:     strings.ToUpper(name),
+	return CountryISO2{
+		code: strings.ToUpper(codeISO2),
 	}, nil
+}
+
+func (c CountryISO2) String() string {
+	return c.code
 }

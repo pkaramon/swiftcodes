@@ -63,7 +63,7 @@ const setupDatabase = `
 CREATE TABLE IF NOT EXISTS countries (
 	iso2 CHAR(2) PRIMARY KEY,
 	name VARCHAR(255) NOT NULL
-)
+);
 
 CREATE TABLE IF NOT EXISTS bank_units (
     id SERIAL PRIMARY KEY,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS bank_units (
     is_headquarter BOOLEAN NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_swift_codes_country_iso2 ON swift_codes (country_iso2);
-CREATE INDEX IF NOT EXISTS idx_swift_codes_swift_code ON swift_codes (swift_code);
-CREATE INDEX IF NOT EXISTS idx_swift_codes_base_code ON swift_codes (LEFT(swift_code, 8));
+CREATE INDEX IF NOT EXISTS idx_bank_units_country_iso2 ON bank_units (country_iso2);
+CREATE INDEX IF NOT EXISTS idx_bank_units_swift_code ON bank_units (swift_code);
+CREATE INDEX IF NOT EXISTS idx_bank_units_base_code ON bank_units (LEFT(swift_code, 8));
 `

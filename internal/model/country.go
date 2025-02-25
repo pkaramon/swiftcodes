@@ -11,12 +11,12 @@ type Country struct {
 	Name string
 }
 
-func NewCountry(code CountryISO2, name string) (*Country, error) {
+func NewCountry(code CountryISO2, name string) (Country, error) {
 	if len(name) == 0 {
-		return nil, errors.New("country name cannot be empty")
+		return Country{}, errors.New("country name cannot be empty")
 	}
 
-	return &Country{Code: code, Name: strings.ToUpper(name)}, nil
+	return Country{Code: code, Name: strings.ToUpper(name)}, nil
 }
 
 type CountryISO2 struct {

@@ -12,11 +12,10 @@ func TestCountry_ValidatesEmptyName(t *testing.T) {
 
 	code, err := model.NewCountryISO2("PL")
 	assert.NoError(t, err)
-	country, err := model.NewCountry(code, "")
+	_, err = model.NewCountry(code, "")
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "country name cannot be empty")
-	assert.Nil(t, country)
 }
 
 func TestCountry_ConvertsNameToUppercase(t *testing.T) {

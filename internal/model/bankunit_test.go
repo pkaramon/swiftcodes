@@ -89,3 +89,13 @@ func TestNewBankUnit(t *testing.T) {
 		})
 	}
 }
+
+func TestSwiftCodeHasHeadquartersBranchCode(t *testing.T) {
+	hq, err := model.NewSwiftCode("BPKOPLPWXXX")
+	assert.NoError(t, err)
+	assert.True(t, hq.HasHeadQuartersBranchCode())
+
+	branch, err := model.NewSwiftCode("BPKOPLPW022")
+	assert.NoError(t, err)
+	assert.False(t, branch.HasHeadQuartersBranchCode())
+}

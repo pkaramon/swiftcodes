@@ -11,6 +11,6 @@ type BankUnit interface {
 	BulkCreate(ctx context.Context, banks []*model.BankUnit) error
 	GetBySwiftCode(ctx context.Context, swiftCode model.SwiftCode) (*model.BankUnit, error)
 	ListByCountry(ctx context.Context, countryISO2 model.CountryISO2) ([]*model.BankUnit, error)
-	Update(ctx context.Context, bank *model.BankUnit) error
 	Delete(ctx context.Context, swiftCode model.SwiftCode) error
+	GetAll(ctx context.Context) ([]*model.BankUnit, error)
 }

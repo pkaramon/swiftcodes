@@ -64,3 +64,11 @@ func (s SwiftCode) CountryISO2() string {
 func (s SwiftCode) BranchCode() string {
 	return s.s[8:11]
 }
+
+func (s SwiftCode) HasHeadQuartersBranchCode() bool {
+	return s.BranchCode() == "XXX"
+}
+
+func (s SwiftCode) String() string {
+	return s.s
+}

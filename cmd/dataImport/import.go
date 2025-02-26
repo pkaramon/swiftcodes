@@ -24,7 +24,6 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
 	if err := db.SetupSchema(context.Background()); err != nil {
 		log.Fatal(err)
 	}

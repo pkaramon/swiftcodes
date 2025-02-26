@@ -2,8 +2,16 @@ package csvmapper
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
+)
+
+var (
+	ErrEmptyFile            = errors.New("empty csv file provided")
+	ErrHeaderMismatch       = errors.New("header does not match expected columns")
+	ErrUnexpectedFieldCount = errors.New("record has unexpected field count")
+	ErrMapperError          = errors.New("failed to map record")
 )
 
 type Mapper[T any] struct {
@@ -40,22 +48,21 @@ func (r *Mapper[T]) MapAll() ([]T, error) {
 		if err == io.EOF {
 			break
 		}
+		if errors.Is(err, csv.ErrFieldCount) {
+			return nil, fmt.Errorf("line %d: %w", lineIdx, ErrUnexpectedFieldCount)
+		}
 		if err != nil {
-			return nil, fmt.Errorf("failed to read record %d: %v", lineIdx, err)
+			return nil, err
 		}
 
 		convertedRecord := make([]string, 0, len(r.expectedColumns))
 		for _, col := range r.expectedColumnsOrdered {
-			if len(record) <= r.columnNameToIndex[col] {
-				return nil, fmt.Errorf("record %d does not have column %s", lineIdx, col)
-			}
-
 			convertedRecord = append(convertedRecord, record[r.columnNameToIndex[col]])
 		}
 
 		element, err := r.recordMapper(convertedRecord)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert record %d: %v", lineIdx, err)
+			return nil, fmt.Errorf("line %d: %w:  %v", lineIdx, ErrMapperError, err)
 		}
 
 		elements = append(elements, element)
@@ -67,7 +74,7 @@ func (r *Mapper[T]) MapAll() ([]T, error) {
 func (r *Mapper[T]) processHeader() error {
 	header, err := r.csvReader.Read()
 	if err == io.EOF {
-		return fmt.Errorf("empty csv file provided")
+		return ErrEmptyFile
 	}
 	if err != nil {
 		return err
@@ -80,7 +87,7 @@ func (r *Mapper[T]) processHeader() error {
 	}
 
 	if len(r.columnNameToIndex) != len(r.expectedColumns) {
-		return fmt.Errorf("header does not match expected columns")
+		return ErrHeaderMismatch
 	}
 
 	return nil

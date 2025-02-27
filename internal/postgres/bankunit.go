@@ -143,6 +143,14 @@ func (r *BankUnitRepo) GetBranches(ctx context.Context, swiftCode model.SwiftCod
 	return r.fromRowsToModels(rows)
 }
 
+func (r *BankUnitRepo) DeleteAll(ctx context.Context) error {
+	_, err := r.db.Exec(ctx, "DELETE FROM bank_units WHERE 1 = 1")
+	if err != nil {
+		return fmt.Errorf("failed to delete all bank units: %w", err)
+	}
+	return nil
+}
+
 func (r *BankUnitRepo) fromRowsToModels(rows pgx.Rows) ([]*model.BankUnit, error) {
 	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[bankUnitRecord])
 	if errors.Is(err, pgx.ErrNoRows) {

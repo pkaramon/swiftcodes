@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -15,10 +16,10 @@ func Encode[T any](w http.ResponseWriter, status int, data T) error {
 	return nil
 }
 
-func Decode[T any](r *http.Request) (T, error) {
-	defer r.Body.Close()
+func Decode[T any](r io.ReadCloser) (T, error) {
+	defer r.Close()
 	var data T
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+	if err := json.NewDecoder(r).Decode(&data); err != nil {
 		return data, fmt.Errorf("decode json: %w", err)
 	}
 	return data, nil

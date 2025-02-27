@@ -123,7 +123,7 @@ func DeleteBankUnit(bankRepo repo.BankUnit) http.HandlerFunc {
 
 func CreateBankUnit(bankRepo repo.BankUnit, countryRepo repo.Country) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := Decode[branchDTO](r)
+		data, err := Decode[branchDTO](r.Body)
 		if err != nil {
 			SendErrorMsg(w, http.StatusBadRequest, "invalid json data")
 			return

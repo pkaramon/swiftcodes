@@ -2,80 +2,50 @@ package csvimport_test
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/pkarmon/swiftcodes/internal/csvimport"
 	"github.com/pkarmon/swiftcodes/internal/model"
 	"github.com/pkarmon/swiftcodes/internal/postgres"
+	"github.com/pkarmon/swiftcodes/internal/repo"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
-	pgcontainer "github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func configureTestDB(ctx context.Context, t *testing.T) postgres.DB {
-	dbName, dbUser, dbPassword := "test", "test", "test"
+var (
+	db           postgres.DB
+	bankUnitRepo repo.BankUnit
+	countryRepo  repo.Country
+)
 
-	container, err := pgcontainer.Run(ctx,
-		"postgres:latest",
-		pgcontainer.WithDatabase(dbName),
-		pgcontainer.WithUsername(dbUser),
-		pgcontainer.WithPassword(dbPassword),
-		testcontainers.WithWaitStrategy(
-			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Second),
-		),
-	)
+func TestMain(m *testing.M) {
+	ctx := context.Background()
+	createdDb, cleanup, err := postgres.ConfigureTestDB(ctx)
+	if err != nil {
+		log.Fatalf("could not seutp test db: %s", err)
+	}
+	defer cleanup()
 
-	t.Cleanup(func() {
-		err := testcontainers.TerminateContainer(container)
-		assert.NoError(t, err)
-	})
+	db = createdDb
+	bankUnitRepo = postgres.NewBankUnitRepo(db)
+	countryRepo = postgres.NewCountryRepo(db)
 
-	assert.NoError(t, err)
-
-	host, err := container.Host(ctx)
-	assert.NoError(t, err)
-
-	port, err := container.MappedPort(ctx, "5432")
-	assert.NoError(t, err)
-
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		dbUser, dbPassword, host, port.Port(), dbName,
-	)
-	db, err := postgres.Connect(connStr)
-	assert.NoError(t, err)
-	err = db.SetupSchema(ctx)
-	require.NoError(t, err)
-
-	return db
-}
-
-func mustNewCountry(t *testing.T, code, name string) model.Country {
-	country, err := model.NewCountry(code, name)
-	assert.NoError(t, err)
-	return country
-}
-
-func mustNewBankUnit(t *testing.T, swiftCode, countryISO2, countryName, bankName, address string, isHeadquarter bool) *model.BankUnit {
-	bankUnit, err := model.NewBankUnit(swiftCode, countryISO2, countryName, address, bankName, isHeadquarter)
-	assert.NoError(t, err)
-	return bankUnit
+	m.Run()
 }
 
 func TestImportCountries(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
-	db := configureTestDB(ctx, t)
-	countryRepo := postgres.NewCountryRepo(db)
+	clear := func(t *testing.T) func() {
+		return func() {
+			err := db.RestartSchema(ctx)
+			assert.NoError(t, err)
+		}
+	}
 
 	t.Run("invalid csv data", func(t *testing.T) {
+		t.Cleanup(clear(t))
+
 		csvData := `Name,Code
 Poland,PLL`
 
@@ -88,6 +58,8 @@ Poland,PLL`
 	})
 
 	t.Run("valid csv data", func(t *testing.T) {
+		t.Cleanup(clear(t))
+
 		csvData := `Name,Code
 Poland,PL
 Germany,DE`
@@ -111,19 +83,19 @@ Germany,DE`
 }
 
 func TestImportBankUnits(t *testing.T) {
-	t.Parallel()
-
 	ctx := context.Background()
-	db := configureTestDB(ctx, t)
-	bankUnitRepo := postgres.NewBankUnitRepo(db)
-
-	// we need to import countries first
-	countryRepo := postgres.NewCountryRepo(db)
 	err := csvimport.Countries(ctx, strings.NewReader(`Name,Code
 Poland,PL`), countryRepo)
 	assert.NoError(t, err)
 
+	clear := func(t *testing.T) func() {
+		return func() {
+			assert.NoError(t, bankUnitRepo.DeleteAll(ctx))
+		}
+	}
+
 	t.Run("invalid csv data", func(t *testing.T) {
+		t.Cleanup(clear(t))
 		// it's invalid because of PLLL, iso2 code must be 2 characters long
 		csvData := `COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
 PLLL,BIGBPLPWCUS,BIC11,BANK MILLENNIUM S.A.,"HARMONY CENTER UL. STANISLAWA ZARYNA 2A WARSZAWA, MAZOWIECKIE, 02-593",WARSZAWA,POLAND,Europe/Warsaw
@@ -138,6 +110,8 @@ PL,HYVEPLP2XXX,BIC11,PEKAO BANK HIPOTECZNY SA,"RENAISSANCE TOWER UL. SKIERNIEWIC
 	})
 
 	t.Run("valid csv data", func(t *testing.T) {
+		t.Cleanup(clear(t))
+
 		csvData := `COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
 PL,BIGBPLPWCUS,BIC11,BANK MILLENNIUM S.A.,"HARMONY CENTER UL. STANISLAWA ZARYNA 2A WARSZAWA, MAZOWIECKIE, 02-593",WARSZAWA,POLAND,Europe/Warsaw
 PL,HYVEPLP2XXX,BIC11,PEKAO BANK HIPOTECZNY SA,"RENAISSANCE TOWER UL. SKIERNIEWICKA 10A WARSZAWA, MAZOWIECKIE, 01-230",WARSZAWA,POLAND,Europe/Warsaw`
@@ -158,4 +132,16 @@ PL,HYVEPLP2XXX,BIC11,PEKAO BANK HIPOTECZNY SA,"RENAISSANCE TOWER UL. SKIERNIEWIC
 		assert.Contains(t, bankUnitsValues, *pekao)
 	})
 
+}
+
+func mustNewCountry(t *testing.T, code, name string) model.Country {
+	country, err := model.NewCountry(code, name)
+	assert.NoError(t, err)
+	return country
+}
+
+func mustNewBankUnit(t *testing.T, swiftCode, countryISO2, countryName, bankName, address string, isHeadquarter bool) *model.BankUnit {
+	bankUnit, err := model.NewBankUnit(swiftCode, countryISO2, countryName, address, bankName, isHeadquarter)
+	assert.NoError(t, err)
+	return bankUnit
 }

@@ -34,22 +34,43 @@ func Connect(connectionURL string) (DB, error) {
 	return DB{pool}, nil
 }
 
-func (p *DB) SetupSchema(ctx context.Context) error {
-	return p.InTx(ctx, func(tx pgx.Tx) error {
+func (db *DB) Ping(ctx context.Context) error {
+	if err := db.Pool.Ping(ctx); err != nil {
+		return fmt.Errorf("failed to ping postgres: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) SetupSchema(ctx context.Context) error {
+	return db.InTx(ctx, func(tx pgx.Tx) error {
 		_, err := tx.Exec(ctx, setupDatabase)
 		return err
 	})
 }
 
-func (p *DB) DropSchema(ctx context.Context) error {
-	return p.InTx(ctx, func(tx pgx.Tx) error {
-		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS bank_units; DROP TABLE IF EXISTS countries;")
+func (db *DB) DropSchema(ctx context.Context) error {
+	return db.InTx(ctx, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, "DROP VIEW IF EXISTS bank_units_with_country;")
+		if err != nil {
+			return fmt.Errorf("failed to drop view: %w", err)
+		}
+		_, err = tx.Exec(ctx, "DROP TABLE IF EXISTS bank_units; DROP TABLE IF EXISTS countries;")
+		if err != nil {
+			return fmt.Errorf("failed to drop tables: %w", err)
+		}
 		return err
 	})
 }
 
-func (p *DB) InTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
-	tx, err := p.Begin(ctx)
+func (db *DB) RestartSchema(ctx context.Context) error {
+	if err := db.DropSchema(ctx); err != nil {
+		return err
+	}
+	return db.SetupSchema(ctx)
+}
+
+func (db *DB) InTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
+	tx, err := db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}

@@ -147,7 +147,7 @@ func TestGetBankUnit(t *testing.T) {
 
 func TestGetAllBankUnitsForCountry(t *testing.T) {
 	r := mux.NewRouter()
-	r.HandleFunc("/{countryISO2code}", handlers.GetAllBankUnitsForCountry(bankUnitRepo)).Methods("GET")
+	r.HandleFunc("/{countryISO2code}", handlers.GetAllBankUnitsForCountry(bankUnitRepo, countryRepo)).Methods("GET")
 
 	t.Run("get all for country", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/PL", nil)
@@ -156,13 +156,30 @@ func TestGetAllBankUnitsForCountry(t *testing.T) {
 		r.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
-		bankUnits, err := handlers.Decode[[]handlers.BranchDTO](rec.Result().Body)
+		response, err := handlers.Decode[handlers.SwiftCodeForCountryResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Len(t, bankUnits, 3)
-		swiftCodes := []string{bankUnits[0].SwiftCode, bankUnits[1].SwiftCode, bankUnits[2].SwiftCode}
+		assert.Equal(t, "PL", response.CountryISO2)
+		assert.Equal(t, "POLAND", response.CountryName)
+		assert.Len(t, response.SwiftCodes, 3)
+		swiftCodes := []string{}
+		for _, bu := range response.SwiftCodes {
+			swiftCodes = append(swiftCodes, bu.SwiftCode)
+		}
 		assert.Contains(t, swiftCodes, "BPKOPLPWXXX")
 		assert.Contains(t, swiftCodes, "BPKOPLPWCSD")
 		assert.Contains(t, swiftCodes, "BPKOPLPWGDG")
+	})
+
+	t.Run("country not found", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/XX", nil)
+		rec := httptest.NewRecorder()
+
+		r.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
+		assert.Nil(t, err)
+		assert.Equal(t, "country not found", errMsg.Message)
 	})
 
 	t.Run("invalid country code", func(t *testing.T) {
@@ -184,10 +201,11 @@ func TestGetAllBankUnitsForCountry(t *testing.T) {
 		r.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
-		bankUnits, err := handlers.Decode[[]handlers.BranchDTO](rec.Result().Body)
+		response, err := handlers.Decode[handlers.SwiftCodeForCountryResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Len(t, bankUnits, 0)
-
+		assert.Equal(t, "DE", response.CountryISO2)
+		assert.Equal(t, "GERMANY", response.CountryName)
+		assert.Len(t, response.SwiftCodes, 0)
 	})
 }
 

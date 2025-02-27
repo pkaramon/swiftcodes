@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pkarmon/swiftcodes/internal/model"
+	"github.com/pkarmon/swiftcodes/internal/repo"
 )
 
 type CountryRepo struct {
@@ -70,4 +72,19 @@ func (r *CountryRepo) GetAll(ctx context.Context) ([]model.Country, error) {
 	}
 
 	return countries, nil
+}
+
+func (r *CountryRepo) GetByCode(ctx context.Context, code model.CountryISO2) (model.Country, error) {
+	var iso2 string
+	var name string
+
+	err := r.db.QueryRow(ctx, "SELECT iso2, name FROM countries WHERE iso2 = $1", code.String()).Scan(&iso2, &name)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.Country{}, repo.ErrNotFound
+	}
+	if err != nil {
+		return model.Country{}, fmt.Errorf("failed to get country by iso2: %w", err)
+	}
+
+	return model.NewCountry(iso2, name)
 }

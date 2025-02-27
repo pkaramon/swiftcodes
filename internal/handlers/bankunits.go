@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -22,6 +21,12 @@ type BranchDTO struct {
 type HeadquartersDTO struct {
 	BranchDTO
 	Branches []BranchDTO `json:"branches"`
+}
+
+type SwiftCodeForCountryResponse struct {
+	CountryISO2 string      `json:"countryISO2"`
+	CountryName string      `json:"countryName"`
+	SwiftCodes  []BranchDTO `json:"swiftCodes"`
 }
 
 func branchToDTO(bu *model.BankUnit) BranchDTO {
@@ -84,22 +89,34 @@ func GetBankUnit(bankRepo repo.BankUnit) http.HandlerFunc {
 	}
 }
 
-func GetAllBankUnitsForCountry(bankRepo repo.BankUnit) http.HandlerFunc {
+func GetAllBankUnitsForCountry(bankRepo repo.BankUnit, countryRepo repo.Country) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		countryISO2 := mux.Vars(r)["countryISO2code"]
-		country, err := model.NewCountryISO2(countryISO2)
+		code, err := model.NewCountryISO2(countryISO2)
 		if err != nil {
 			SendErrorMsg(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		bankUnits, err := bankRepo.GetAllByCountry(r.Context(), country)
+		country, err := countryRepo.GetByCode(r.Context(), code)
+		if errors.Is(err, repo.ErrNotFound) {
+			SendErrorMsg(w, http.StatusNotFound, "country not found")
+			return
+		}
+
+		bankUnits, err := bankRepo.GetAllByCountry(r.Context(), code)
 		if err != nil {
 			SendServerError(w)
 			return
 		}
 
-		Encode(w, http.StatusOK, branchesToDTOS(bankUnits))
+		res := SwiftCodeForCountryResponse{
+			CountryISO2: country.Code.String(),
+			CountryName: country.Name,
+			SwiftCodes:  branchesToDTOS(bankUnits),
+		}
+
+		Encode(w, http.StatusOK, &res)
 	}
 }
 
@@ -135,7 +152,6 @@ func CreateBankUnit(bankRepo repo.BankUnit, countryRepo repo.Country) http.Handl
 		}
 		exists, err := countryRepo.Exists(r.Context(), country)
 		if err != nil {
-			log.Println(err)
 			SendServerError(w)
 			return
 		}

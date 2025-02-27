@@ -79,7 +79,7 @@ func setupServer(cfg ServerConfig, db postgres.DB) *http.Server {
 	api := r.PathPrefix("/v1/swift-codes").Subrouter()
 
 	api.HandleFunc("/country/{countryISO2code}",
-		handlers.GetAllBankUnitsForCountry(bankRepo)).Methods(http.MethodGet)
+		handlers.GetAllBankUnitsForCountry(bankRepo, countryRepo)).Methods(http.MethodGet)
 	api.HandleFunc("/{swiftCode}",
 		handlers.GetBankUnit(bankRepo)).Methods(http.MethodGet)
 	api.HandleFunc("/{swiftCode}",

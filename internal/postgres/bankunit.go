@@ -153,9 +153,6 @@ func (r *BankUnitRepo) DeleteAll(ctx context.Context) error {
 
 func (r *BankUnitRepo) fromRowsToModels(rows pgx.Rows) ([]*model.BankUnit, error) {
 	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[bankUnitRecord])
-	if errors.Is(err, pgx.ErrNoRows) {
-		return []*model.BankUnit{}, nil
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect bank units: %w", err)
 	}

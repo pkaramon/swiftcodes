@@ -14,6 +14,11 @@ type CountryRepo struct {
 	db DB
 }
 
+type countryRecord struct {
+	Iso2 string `db:"iso2"`
+	Name string `db:"name"`
+}
+
 func NewCountryRepo(db DB) *CountryRepo {
 	return &CountryRepo{db: db}
 }
@@ -47,27 +52,23 @@ func (r *CountryRepo) Exists(ctx context.Context, country model.Country) (bool, 
 }
 
 func (r *CountryRepo) GetAll(ctx context.Context) ([]model.Country, error) {
-	rows, err := r.db.Query(ctx, "SELECT iso2, name FROM countries")
+	rows, err := r.db.Query(ctx, "SELECT * FROM countries")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get countries: %w", err)
 	}
 	defer rows.Close()
 
-	var iso2 string
-	var name string
+	records, err := pgx.CollectRows(rows, pgx.RowToStructByName[countryRecord])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect country records: %w", err)
+	}
 
-	countries := make([]model.Country, 0)
-	for rows.Next() {
-		err := rows.Scan(&iso2, &name)
+	countries := make([]model.Country, 0, len(records))
+	for _, record := range records {
+		country, err := model.NewCountry(record.Iso2, record.Name)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan country: %w", err)
+			return nil, fmt.Errorf("failed to create country: %w", err)
 		}
-
-		country, err := model.NewCountry(iso2, name)
-		if err != nil {
-			return nil, fmt.Errorf("invalid data present in db: %w", err)
-		}
-
 		countries = append(countries, country)
 	}
 
@@ -75,16 +76,16 @@ func (r *CountryRepo) GetAll(ctx context.Context) ([]model.Country, error) {
 }
 
 func (r *CountryRepo) GetByCode(ctx context.Context, code model.CountryISO2) (model.Country, error) {
-	var iso2 string
-	var name string
-
-	err := r.db.QueryRow(ctx, "SELECT iso2, name FROM countries WHERE iso2 = $1", code.String()).Scan(&iso2, &name)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return model.Country{}, repo.ErrNotFound
-	}
+	rows, err := r.db.Query(ctx, "SELECT * FROM countries WHERE iso2 = $1", code.String())
 	if err != nil {
 		return model.Country{}, fmt.Errorf("failed to get country by iso2: %w", err)
 	}
+	defer rows.Close()
 
-	return model.NewCountry(iso2, name)
+	rec, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[countryRecord])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return model.Country{}, repo.ErrNotFound
+	}
+
+	return model.NewCountry(rec.Iso2, rec.Name)
 }

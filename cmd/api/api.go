@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkarmon/swiftcodes/internal/csvimport"
 	"github.com/pkarmon/swiftcodes/internal/handlers"
+	"github.com/pkarmon/swiftcodes/internal/middleware"
 	"github.com/pkarmon/swiftcodes/internal/postgres"
 )
 
@@ -89,7 +90,7 @@ func setupServer(cfg ServerConfig, db postgres.DB) *http.Server {
 
 	return &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
-		Handler:      r,
+		Handler:      middleware.Logging(r),
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 	}

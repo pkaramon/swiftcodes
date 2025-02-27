@@ -141,7 +141,7 @@ func TestGetBankUnit(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Equal(t, "swift code length must be 11 characters", errMsg.Error)
+		assert.Equal(t, "swift code length must be 11 characters", errMsg.Message)
 	})
 }
 
@@ -174,7 +174,7 @@ func TestGetAllBankUnitsForCountry(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Equal(t, "country ISO2 code length must be 2 characters", errMsg.Error)
+		assert.Equal(t, "country ISO2 code length must be 2 characters", errMsg.Message)
 	})
 
 	t.Run("country that does not have any bank units", func(t *testing.T) {
@@ -229,7 +229,7 @@ func TestDeleteBankUnit(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Equal(t, "swift code length must be 11 characters", errMsg.Error)
+		assert.Equal(t, "swift code length must be 11 characters", errMsg.Message)
 	})
 }
 
@@ -282,7 +282,7 @@ func TestCreateBankUnit(t *testing.T) {
 		assert.Equal(t, http.StatusConflict, rec.Code)
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Equal(t, "duplicate swift code", errMsg.Error)
+		assert.Equal(t, "duplicate swift code", errMsg.Message)
 	})
 
 	t.Run("create with non-existing country", func(t *testing.T) {
@@ -303,7 +303,7 @@ func TestCreateBankUnit(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Equal(t, "country does not exist, make sure ISO2 code is matching with the name", errMsg.Error)
+		assert.Equal(t, "country does not exist, make sure ISO2 code is matching with the name", errMsg.Message)
 	})
 
 	t.Run("invalid request body", func(t *testing.T) {
@@ -317,7 +317,7 @@ func TestCreateBankUnit(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
-		assert.Equal(t, "invalid json data", errMsg.Error)
+		assert.Equal(t, "invalid json data", errMsg.Message)
 	})
 }
 

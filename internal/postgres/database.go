@@ -27,10 +27,6 @@ func Connect(connectionURL string) (DB, error) {
 		return DB{}, fmt.Errorf("failed to create Pool: %w ", err)
 	}
 
-	if err := pool.Ping(context.Background()); err != nil {
-		return DB{}, fmt.Errorf("failed to ping postgres: %w", err)
-	}
-
 	return DB{pool}, nil
 }
 
@@ -60,13 +56,6 @@ func (db *DB) DropSchema(ctx context.Context) error {
 		}
 		return err
 	})
-}
-
-func (db *DB) RestartSchema(ctx context.Context) error {
-	if err := db.DropSchema(ctx); err != nil {
-		return err
-	}
-	return db.SetupSchema(ctx)
 }
 
 func (db *DB) InTx(ctx context.Context, fn func(tx pgx.Tx) error) error {

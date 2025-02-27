@@ -38,7 +38,9 @@ func TestImportCountries(t *testing.T) {
 	ctx := context.Background()
 	clear := func(t *testing.T) func() {
 		return func() {
-			err := db.RestartSchema(ctx)
+			err := db.DropSchema(ctx)
+			assert.NoError(t, err)
+			err = db.SetupSchema(ctx)
 			assert.NoError(t, err)
 		}
 	}

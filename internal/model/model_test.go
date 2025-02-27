@@ -133,3 +133,9 @@ func TestSwiftCodeBaseCodeAndBranchCode(t *testing.T) {
 	assert.Equal(t, "BPKOPLPW", sc.BaseCode())
 	assert.Equal(t, "XXX", sc.BranchCode())
 }
+
+func TestSwiftCodeString(t *testing.T) {
+	sc, err := model.NewSwiftCode("BPKOPLPWXXX")
+	assert.NoError(t, err)
+	assert.Equal(t, "BPKOPLPWXXX", sc.String())
+}

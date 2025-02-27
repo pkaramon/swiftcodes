@@ -26,11 +26,11 @@ func Decode[T any](r io.ReadCloser) (T, error) {
 }
 
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Message string `json:"message"`
 }
 
 func SendErrorMsg(w http.ResponseWriter, status int, msg string) {
-	e := ErrorResponse{Error: msg}
+	e := ErrorResponse{Message: msg}
 	if err := Encode(w, status, e); err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}

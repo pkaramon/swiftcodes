@@ -62,16 +62,11 @@ func mapCSVRecordToBankUnit(record []string) (*model.BankUnit, error) {
 		return nil, err
 	}
 
-	countryISO2, err := model.NewCountryISO2(record[1])
-	if err != nil {
-		return nil, err
-	}
-
 	isHeadquarter := swiftCode.HasHeadQuartersBranchCode()
 
 	bankUnit, err := model.NewBankUnit(
 		swiftCode.String(),
-		countryISO2.String(),
+		record[1],
 		record[2],
 		record[4],
 		record[3],

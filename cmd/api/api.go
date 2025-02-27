@@ -8,13 +8,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkarmon/swiftcodes/internal/csvimport"
-	"github.com/pkarmon/swiftcodes/internal/database"
 	"github.com/pkarmon/swiftcodes/internal/handlers"
 	"github.com/pkarmon/swiftcodes/internal/postgres"
 )
 
 func main() {
-	db, err := database.Connect("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+	db, err := postgres.Connect("postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}

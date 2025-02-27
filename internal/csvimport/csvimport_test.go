@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pkarmon/swiftcodes/internal/csvimport"
-	"github.com/pkarmon/swiftcodes/internal/database"
 	"github.com/pkarmon/swiftcodes/internal/model"
 	"github.com/pkarmon/swiftcodes/internal/postgres"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +17,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func configureTestDB(ctx context.Context, t *testing.T) database.DB {
+func configureTestDB(ctx context.Context, t *testing.T) postgres.DB {
 	dbName, dbUser, dbPassword := "test", "test", "test"
 
 	container, err := pgcontainer.Run(ctx,
@@ -49,7 +48,7 @@ func configureTestDB(ctx context.Context, t *testing.T) database.DB {
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		dbUser, dbPassword, host, port.Port(), dbName,
 	)
-	db, err := database.Connect(connStr)
+	db, err := postgres.Connect(connStr)
 	assert.NoError(t, err)
 	err = db.SetupSchema(ctx)
 	require.NoError(t, err)

@@ -8,16 +8,15 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/pkarmon/swiftcodes/internal/database"
 	"github.com/pkarmon/swiftcodes/internal/model"
 	"github.com/pkarmon/swiftcodes/internal/repo"
 )
 
 type BankUnitRepo struct {
-	db database.DB
+	db DB
 }
 
-func NewBankUnitRepo(db database.DB) *BankUnitRepo {
+func NewBankUnitRepo(db DB) *BankUnitRepo {
 	return &BankUnitRepo{db: db}
 }
 

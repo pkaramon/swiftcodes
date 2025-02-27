@@ -5,15 +5,14 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/pkarmon/swiftcodes/internal/database"
 	"github.com/pkarmon/swiftcodes/internal/model"
 )
 
 type CountryRepo struct {
-	db database.DB
+	db DB
 }
 
-func NewCountryRepo(db database.DB) *CountryRepo {
+func NewCountryRepo(db DB) *CountryRepo {
 	return &CountryRepo{db: db}
 }
 

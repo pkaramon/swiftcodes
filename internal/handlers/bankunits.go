@@ -67,7 +67,7 @@ func GetBankUnit(bankRepo repo.BankUnit) http.HandlerFunc {
 
 		bankUnit, err := bankRepo.GetBySwiftCode(r.Context(), swiftcode)
 		if err != nil {
-			if err == repo.ErrNotFound {
+			if errors.Is(err, repo.ErrNotFound) {
 				SendErrorMsg(w, http.StatusNotFound, "not found")
 				return
 			}

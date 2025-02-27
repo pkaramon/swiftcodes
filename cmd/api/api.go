@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -52,7 +53,7 @@ func main() {
 	srv := setupServer(serverCfg, db)
 	go func() {
 		log.Printf("Starting server on %s", srv.Addr)
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()

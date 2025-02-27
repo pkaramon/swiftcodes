@@ -161,7 +161,7 @@ func TestGetAllBankUnitsForCountry(t *testing.T) {
 		assert.Equal(t, "PL", response.CountryISO2)
 		assert.Equal(t, "POLAND", response.CountryName)
 		assert.Len(t, response.SwiftCodes, 3)
-		swiftCodes := []string{}
+		var swiftCodes []string
 		for _, bu := range response.SwiftCodes {
 			swiftCodes = append(swiftCodes, bu.SwiftCode)
 		}

@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 
 func TestImportCountries(t *testing.T) {
 	ctx := context.Background()
-	clear := func(t *testing.T) func() {
+	clearDB := func(t *testing.T) func() {
 		return func() {
 			err := db.DropSchema(ctx)
 			assert.NoError(t, err)
@@ -46,7 +46,7 @@ func TestImportCountries(t *testing.T) {
 	}
 
 	t.Run("invalid csv data", func(t *testing.T) {
-		t.Cleanup(clear(t))
+		t.Cleanup(clearDB(t))
 
 		csvData := `Name,Code
 Poland,PLL`
@@ -60,7 +60,7 @@ Poland,PLL`
 	})
 
 	t.Run("valid csv data", func(t *testing.T) {
-		t.Cleanup(clear(t))
+		t.Cleanup(clearDB(t))
 
 		csvData := `Name,Code
 Poland,PL
@@ -90,14 +90,14 @@ func TestImportBankUnits(t *testing.T) {
 Poland,PL`), countryRepo)
 	assert.NoError(t, err)
 
-	clear := func(t *testing.T) func() {
+	clearDB := func(t *testing.T) func() {
 		return func() {
 			assert.NoError(t, bankUnitRepo.DeleteAll(ctx))
 		}
 	}
 
 	t.Run("invalid csv data", func(t *testing.T) {
-		t.Cleanup(clear(t))
+		t.Cleanup(clearDB(t))
 		// it's invalid because of PLLL, iso2 code must be 2 characters long
 		csvData := `COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
 PLLL,BIGBPLPWCUS,BIC11,BANK MILLENNIUM S.A.,"HARMONY CENTER UL. STANISLAWA ZARYNA 2A WARSZAWA, MAZOWIECKIE, 02-593",WARSZAWA,POLAND,Europe/Warsaw
@@ -112,7 +112,7 @@ PL,HYVEPLP2XXX,BIC11,PEKAO BANK HIPOTECZNY SA,"RENAISSANCE TOWER UL. SKIERNIEWIC
 	})
 
 	t.Run("valid csv data", func(t *testing.T) {
-		t.Cleanup(clear(t))
+		t.Cleanup(clearDB(t))
 
 		csvData := `COUNTRY ISO2 CODE,SWIFT CODE,CODE TYPE,NAME,ADDRESS,TOWN NAME,COUNTRY NAME,TIME ZONE
 PL,BIGBPLPWCUS,BIC11,BANK MILLENNIUM S.A.,"HARMONY CENTER UL. STANISLAWA ZARYNA 2A WARSZAWA, MAZOWIECKIE, 02-593",WARSZAWA,POLAND,Europe/Warsaw

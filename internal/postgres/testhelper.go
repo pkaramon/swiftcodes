@@ -43,7 +43,10 @@ func ConfigureTestDB(ctx context.Context) (DB, func(), error) {
 	hostPort := resource.GetPort("5432/tcp")
 	connStr := "postgres://test:test@localhost:" + hostPort + "/test?sslmode=disable"
 
-	resource.Expire(240) // hard kill after 240s
+	// hard kill after 240s
+	if err := resource.Expire(240); err != nil {
+		log.Fatalf("could not expire resource: %s", err)
+	}
 
 	pool.MaxWait = 120 * time.Second
 	if err = pool.Retry(func() error {

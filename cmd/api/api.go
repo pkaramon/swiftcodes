@@ -29,6 +29,11 @@ func main() {
 
 	ctx := context.Background()
 
+	// Ping database
+	if err := db.Ping(ctx); err != nil {
+		log.Fatal(err)
+	}
+
 	// Setup database schema
 	if err := db.DropSchema(ctx); err != nil {
 		log.Fatal(err)

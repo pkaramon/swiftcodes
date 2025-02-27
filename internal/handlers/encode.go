@@ -25,22 +25,23 @@ func Decode[T any](r io.ReadCloser) (T, error) {
 	return data, nil
 }
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func SendErrorMsg(w http.ResponseWriter, status int, msg string) {
-	type err struct {
-		Error string `json:"error"`
-	}
-	e := err{Error: msg}
+	e := ErrorResponse{Error: msg}
 	if err := Encode(w, status, e); err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 	}
 }
 
-func SendSuccessMsg(w http.ResponseWriter, status int, msg string) {
-	type message struct {
-		Message string `json:"message"`
-	}
+type SuccessResponse struct {
+	Message string `json:"message"`
+}
 
-	m := message{Message: msg}
+func SendSuccessMsg(w http.ResponseWriter, status int, msg string) {
+	m := SuccessResponse{Message: msg}
 	if err := Encode(w, status, m); err != nil {
 		SendServerError(w)
 	}

@@ -10,7 +10,7 @@ import (
 	"github.com/pkarmon/swiftcodes/internal/repo"
 )
 
-type branchDTO struct {
+type BranchDTO struct {
 	Address       string `json:"address"`
 	Name          string `json:"bankName"`
 	CountryISO2   string `json:"countryISO2"`
@@ -19,13 +19,13 @@ type branchDTO struct {
 	SwiftCode     string `json:"swiftCode"`
 }
 
-type headquartersDTO struct {
-	branchDTO
-	Branches []branchDTO `json:"branches"`
+type HeadquartersDTO struct {
+	BranchDTO
+	Branches []BranchDTO `json:"branches"`
 }
 
-func branchToDTO(bu *model.BankUnit) branchDTO {
-	return branchDTO{
+func branchToDTO(bu *model.BankUnit) BranchDTO {
+	return BranchDTO{
 		Address:       bu.Address,
 		Name:          bu.Name,
 		CountryISO2:   bu.Country.Code.String(),
@@ -35,16 +35,16 @@ func branchToDTO(bu *model.BankUnit) branchDTO {
 	}
 }
 
-func headquartersToDTO(hq *model.BankUnit, branches []*model.BankUnit) headquartersDTO {
-	dto := headquartersDTO{
-		branchDTO: branchToDTO(hq),
+func headquartersToDTO(hq *model.BankUnit, branches []*model.BankUnit) HeadquartersDTO {
+	dto := HeadquartersDTO{
+		BranchDTO: branchToDTO(hq),
 		Branches:  branchesToDTOS(branches),
 	}
 	return dto
 }
 
-func branchesToDTOS(bu []*model.BankUnit) []branchDTO {
-	dtos := make([]branchDTO, len(bu))
+func branchesToDTOS(bu []*model.BankUnit) []BranchDTO {
+	dtos := make([]BranchDTO, len(bu))
 	for i, b := range bu {
 		dtos[i] = branchToDTO(b)
 	}
@@ -123,7 +123,7 @@ func DeleteBankUnit(bankRepo repo.BankUnit) http.HandlerFunc {
 
 func CreateBankUnit(bankRepo repo.BankUnit, countryRepo repo.Country) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := Decode[branchDTO](r.Body)
+		data, err := Decode[BranchDTO](r.Body)
 		if err != nil {
 			SendErrorMsg(w, http.StatusBadRequest, "invalid json data")
 			return

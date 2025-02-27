@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"testing"
 	"time"
 
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
-	"github.com/pkarmon/swiftcodes/internal/repo"
 )
 
 func ConfigureTestDB(ctx context.Context) (DB, func(), error) {
@@ -69,17 +67,4 @@ func ConfigureTestDB(ctx context.Context) (DB, func(), error) {
 	}
 
 	return db, cleanup, nil
-}
-
-type TestStore struct {
-	BankUnit repo.BankUnit
-	Country  repo.Country
-}
-
-func GetTestStore(t *testing.T, db DB) TestStore {
-	return TestStore{
-		BankUnit: NewBankUnitRepo(db),
-		Country:  NewCountryRepo(db),
-	}
-
 }

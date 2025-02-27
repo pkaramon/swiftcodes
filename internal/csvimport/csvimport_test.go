@@ -12,6 +12,7 @@ import (
 	"github.com/pkarmon/swiftcodes/internal/model"
 	"github.com/pkarmon/swiftcodes/internal/postgres"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go"
 	pgcontainer "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -51,22 +52,19 @@ func configureTestDB(ctx context.Context, t *testing.T) database.DB {
 	db, err := database.Connect(connStr)
 	assert.NoError(t, err)
 	err = db.SetupSchema(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	return db
 }
 
 func mustNewCountry(t *testing.T, code, name string) model.Country {
-	c, err := model.NewCountryISO2(code)
-	assert.NoError(t, err)
-
-	country, err := model.NewCountry(c, name)
+	country, err := model.NewCountry(code, name)
 	assert.NoError(t, err)
 	return country
 }
 
-func mustNewBankUnit(t *testing.T, swiftCode, countryISO2, name, address string, isHeadquarter bool) *model.BankUnit {
-	bankUnit, err := model.NewBankUnit(swiftCode, countryISO2, address, name, isHeadquarter)
+func mustNewBankUnit(t *testing.T, swiftCode, countryISO2, countryName, bankName, address string, isHeadquarter bool) *model.BankUnit {
+	bankUnit, err := model.NewBankUnit(swiftCode, countryISO2, countryName, address, bankName, isHeadquarter)
 	assert.NoError(t, err)
 	return bankUnit
 }
@@ -152,8 +150,8 @@ PL,HYVEPLP2XXX,BIC11,PEKAO BANK HIPOTECZNY SA,"RENAISSANCE TOWER UL. SKIERNIEWIC
 		assert.NoError(t, err)
 		assert.Len(t, bankUnits, 2)
 
-		milienium := mustNewBankUnit(t, "BIGBPLPWCUS", "PL", "BANK MILLENNIUM S.A.", "HARMONY CENTER UL. STANISLAWA ZARYNA 2A WARSZAWA, MAZOWIECKIE, 02-593", false)
-		pekao := mustNewBankUnit(t, "HYVEPLP2XXX", "PL", "PEKAO BANK HIPOTECZNY SA", "RENAISSANCE TOWER UL. SKIERNIEWICKA 10A WARSZAWA, MAZOWIECKIE, 01-230", true)
+		milienium := mustNewBankUnit(t, "BIGBPLPWCUS", "PL", "POLAND", "BANK MILLENNIUM S.A.", "HARMONY CENTER UL. STANISLAWA ZARYNA 2A WARSZAWA, MAZOWIECKIE, 02-593", false)
+		pekao := mustNewBankUnit(t, "HYVEPLP2XXX", "PL", "POLAND", "PEKAO BANK HIPOTECZNY SA", "RENAISSANCE TOWER UL. SKIERNIEWICKA 10A WARSZAWA, MAZOWIECKIE, 01-230", true)
 
 		bankUnitsValues := []model.BankUnit{*bankUnits[0], *bankUnits[1]}
 

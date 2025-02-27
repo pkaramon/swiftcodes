@@ -41,6 +41,13 @@ func (p *DB) SetupSchema(ctx context.Context) error {
 	})
 }
 
+func (p *DB) DropSchema(ctx context.Context) error {
+	return p.InTx(ctx, func(tx pgx.Tx) error {
+		_, err := tx.Exec(ctx, "DROP TABLE IF EXISTS bank_units; DROP TABLE IF EXISTS countries;")
+		return err
+	})
+}
+
 func (p *DB) InTx(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	tx, err := p.Begin(ctx)
 	if err != nil {
@@ -68,7 +75,7 @@ CREATE TABLE IF NOT EXISTS countries (
 CREATE TABLE IF NOT EXISTS bank_units (
     id SERIAL PRIMARY KEY,
     country_iso2 CHAR(2) NOT NULL REFERENCES countries(iso2),
-    swift_code CHAR(11) NOT NULL,
+    swift_code CHAR(11) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
 	address TEXT NOT NULL,
     is_headquarter BOOLEAN NOT NULL
@@ -77,4 +84,16 @@ CREATE TABLE IF NOT EXISTS bank_units (
 CREATE INDEX IF NOT EXISTS idx_bank_units_country_iso2 ON bank_units (country_iso2);
 CREATE INDEX IF NOT EXISTS idx_bank_units_swift_code ON bank_units (swift_code);
 CREATE INDEX IF NOT EXISTS idx_bank_units_base_code ON bank_units (LEFT(swift_code, 8));
+
+CREATE OR REPLACE VIEW bank_units_with_country AS
+SELECT
+    bu.id,
+    bu.country_iso2,
+    bu.swift_code,
+    bu.name as bank_name,
+    bu.address,
+    bu.is_headquarter,
+    c.name as country_name
+FROM bank_units bu
+JOIN countries c ON bu.country_iso2 = c.iso2;
 `

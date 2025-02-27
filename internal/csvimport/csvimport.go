@@ -30,21 +30,15 @@ func Countries(ctx context.Context, src io.Reader, r repo.Country) error {
 }
 
 func mapCSVRecordToCountry(record []string) (model.Country, error) {
-	var country model.Country
-	iso2, err := model.NewCountryISO2(record[1])
+	country, err := model.NewCountry(record[1], record[0])
 	if err != nil {
-		return country, err
-	}
-
-	country, err = model.NewCountry(iso2, record[0])
-	if err != nil {
-		return country, err
+		return model.Country{}, err
 	}
 	return country, nil
 }
 
 func BankUnits(ctx context.Context, src io.Reader, r repo.BankUnit) error {
-	mapper := csvmapper.New(src, []string{"SWIFT CODE", "COUNTRY ISO2 CODE", "NAME", "ADDRESS"}, mapCSVRecordToBankUnit)
+	mapper := csvmapper.New(src, []string{"SWIFT CODE", "COUNTRY ISO2 CODE", "COUNTRY NAME", "NAME", "ADDRESS"}, mapCSVRecordToBankUnit)
 
 	bankUnits, err := mapper.MapAll()
 	if err != nil {
@@ -78,8 +72,9 @@ func mapCSVRecordToBankUnit(record []string) (*model.BankUnit, error) {
 	bankUnit, err := model.NewBankUnit(
 		swiftCode.String(),
 		countryISO2.String(),
-		record[3],
 		record[2],
+		record[4],
+		record[3],
 		isHeadquarter,
 	)
 	if err != nil {

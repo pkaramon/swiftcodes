@@ -34,7 +34,7 @@ func (r *CountryRepo) BulkCreate(ctx context.Context, countries []model.Country)
 
 func (r *CountryRepo) Exists(ctx context.Context, country model.Country) (bool, error) {
 	var exists bool
-	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM countries WHERE code = $1 AND name = $2)",
+	err := r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM countries WHERE iso2 = $1 AND name = $2)",
 		country.Code.String(),
 		country.Name).Scan(&exists)
 	if err != nil {
@@ -62,12 +62,7 @@ func (r *CountryRepo) GetAll(ctx context.Context) ([]model.Country, error) {
 			return nil, fmt.Errorf("failed to scan country: %w", err)
 		}
 
-		code, err := model.NewCountryISO2(iso2)
-		if err != nil {
-			return nil, fmt.Errorf("invalid data present in db: %w", err)
-		}
-
-		country, err := model.NewCountry(code, name)
+		country, err := model.NewCountry(iso2, name)
 		if err != nil {
 			return nil, fmt.Errorf("invalid data present in db: %w", err)
 		}

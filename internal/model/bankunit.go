@@ -8,28 +8,35 @@ import (
 
 type BankUnit struct {
 	SwiftCode     SwiftCode
-	CountryISO2   CountryISO2
+	Country       Country
 	Address       string
 	Name          string
 	IsHeadquarter bool
 }
 
-func NewBankUnit(swiftCode string, countryISO2 string, address, name string, isHeadquarter bool) (*BankUnit, error) {
-	codeISO2, err := NewCountryISO2(countryISO2)
+func NewBankUnit(
+	swiftCode string,
+	countryISO2 string,
+	countryName string,
+	address,
+	name string,
+	isHeadquarter bool,
+) (*BankUnit, error) {
+	country, err := NewCountry(countryISO2, countryName)
 	if err != nil {
 		return nil, err
 	}
 
-	sc, err := NewSwiftCode(swiftCode)
+	swiftcode, err := NewSwiftCode(swiftCode)
 	if err != nil {
 		return nil, err
 	}
 
-	if sc.CountryISO2() != codeISO2.code {
+	if swiftcode.CountryISO2() != country.Code.String() {
 		return nil, errors.New("swift code and country ISO2 code mismatch")
 	}
 
-	if isHeadquarter && sc.BranchCode() != "XXX" {
+	if isHeadquarter && swiftcode.BranchCode() != "XXX" {
 		return nil, errors.New("headquarter must have branch code XXX")
 	}
 
@@ -38,8 +45,8 @@ func NewBankUnit(swiftCode string, countryISO2 string, address, name string, isH
 	}
 
 	return &BankUnit{
-		SwiftCode:     sc,
-		CountryISO2:   codeISO2,
+		SwiftCode:     swiftcode,
+		Country:       country,
 		Address:       address,
 		Name:          name,
 		IsHeadquarter: isHeadquarter,
@@ -63,6 +70,10 @@ func (s SwiftCode) CountryISO2() string {
 
 func (s SwiftCode) BranchCode() string {
 	return s.s[8:11]
+}
+
+func (s SwiftCode) BaseCode() string {
+	return s.s[0:8]
 }
 
 func (s SwiftCode) HasHeadQuartersBranchCode() bool {

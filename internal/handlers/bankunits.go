@@ -19,18 +19,18 @@ type BranchDTO struct {
 }
 
 type HeadquartersDTO struct {
-	BranchDTO
-	Branches []BranchDTO `json:"branches"`
+	*BranchDTO
+	Branches []*BranchDTO `json:"branches"`
 }
 
 type SwiftCodeForCountryResponse struct {
-	CountryISO2 string      `json:"countryISO2"`
-	CountryName string      `json:"countryName"`
-	SwiftCodes  []BranchDTO `json:"swiftCodes"`
+	CountryISO2 string       `json:"countryISO2"`
+	CountryName string       `json:"countryName"`
+	SwiftCodes  []*BranchDTO `json:"swiftCodes"`
 }
 
-func branchToDTO(bu *model.BankUnit) BranchDTO {
-	return BranchDTO{
+func branchToDTO(bu *model.BankUnit) *BranchDTO {
+	return &BranchDTO{
 		Address:       bu.Address,
 		Name:          bu.Name,
 		CountryISO2:   bu.Country.Code.String(),
@@ -40,16 +40,15 @@ func branchToDTO(bu *model.BankUnit) BranchDTO {
 	}
 }
 
-func headquartersToDTO(hq *model.BankUnit, branches []*model.BankUnit) HeadquartersDTO {
-	dto := HeadquartersDTO{
+func headquartersToDTO(hq *model.BankUnit, branches []*model.BankUnit) *HeadquartersDTO {
+	return &HeadquartersDTO{
 		BranchDTO: branchToDTO(hq),
 		Branches:  branchesToDTOS(branches),
 	}
-	return dto
 }
 
-func branchesToDTOS(bu []*model.BankUnit) []BranchDTO {
-	dtos := make([]BranchDTO, len(bu))
+func branchesToDTOS(bu []*model.BankUnit) []*BranchDTO {
+	dtos := make([]*BranchDTO, len(bu))
 	for i, b := range bu {
 		dtos[i] = branchToDTO(b)
 	}

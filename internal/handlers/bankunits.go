@@ -71,6 +71,7 @@ func GetBankUnit(bankRepo repo.BankUnit) http.HandlerFunc {
 				return
 			}
 			SendServerError(w)
+			return
 		}
 
 		if bankUnit.IsHeadquarter {

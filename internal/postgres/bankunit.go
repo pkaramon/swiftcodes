@@ -43,9 +43,9 @@ func (rec *bankUnitRecord) toModel() (*model.BankUnit, error) {
 
 func (r *BankUnitRepo) BulkCreate(ctx context.Context, bankUnits []*model.BankUnit) error {
 	return r.db.InTx(ctx, func(tx pgx.Tx) error {
-		rows := make([][]interface{}, len(bankUnits))
+		rows := make([][]any, len(bankUnits))
 		for i, bankUnit := range bankUnits {
-			rows[i] = []interface{}{bankUnit.Country.Code.String(), bankUnit.SwiftCode.String(), bankUnit.Name, bankUnit.Address, bankUnit.IsHeadquarter}
+			rows[i] = []any{bankUnit.Country.Code.String(), bankUnit.SwiftCode.String(), bankUnit.Name, bankUnit.Address, bankUnit.IsHeadquarter}
 		}
 
 		_, err := tx.CopyFrom(ctx, pgx.Identifier{"bank_units"},

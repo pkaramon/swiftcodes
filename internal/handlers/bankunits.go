@@ -70,7 +70,7 @@ func GetBankUnit(bankRepo repo.BankUnit) http.HandlerFunc {
 				SendErrorMsg(w, http.StatusNotFound, "not found")
 				return
 			}
-			SendErrorMsg(w, http.StatusInternalServerError, "server error")
+			SendServerError(w)
 		}
 
 		if bankUnit.IsHeadquarter {

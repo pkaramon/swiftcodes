@@ -32,6 +32,15 @@ func TestMain(m *testing.M) {
 	bankUnitRepo = postgres.NewBankUnitRepo(db)
 	countryRepo = postgres.NewCountryRepo(db)
 
+	resetTestData(ctx)
+
+	m.Run()
+}
+
+func resetTestData(ctx context.Context) {
+	_ = db.DropSchema(context.Background())
+	exitIfErr(db.SetupSchema(ctx))
+
 	pl := Must(model.NewCountry("PL", "POLAND"))
 	bg := Must(model.NewCountry("BG", "BULGARIA"))
 	de := Must(model.NewCountry("DE", "GERMANY"))
@@ -75,8 +84,6 @@ func TestMain(m *testing.M) {
 	))
 
 	exitIfErr(bankUnitRepo.BulkCreate(ctx, []*model.BankUnit{hq, branch1, branch2, bulgarian}))
-
-	m.Run()
 }
 
 func TestGetBankUnit(t *testing.T) {
@@ -213,7 +220,9 @@ func TestDeleteBankUnit(t *testing.T) {
 	r := mux.NewRouter()
 	r.HandleFunc("/{swiftCode}", handlers.DeleteBankUnit(bankUnitRepo)).Methods("DELETE")
 
-	t.Run("delete existing bank unit", func(t *testing.T) {
+	t.Run("delete existing bank unit", withCleanup(func(t *testing.T) {
+		assert.Equal(t, 4, len(Must(bankUnitRepo.GetAll(context.Background()))))
+
 		req := httptest.NewRequest("DELETE", "/BEFNBGS1XXX", nil)
 		rec := httptest.NewRecorder()
 
@@ -227,18 +236,21 @@ func TestDeleteBankUnit(t *testing.T) {
 		swiftcode := Must(model.NewSwiftCode("BEFNBGS1XXX"))
 		_, err = bankUnitRepo.GetBySwiftCode(context.Background(), swiftcode)
 		assert.ErrorIs(t, err, repo.ErrNotFound)
-	})
+	}))
 
-	t.Run("delete non-existing bank unit", func(t *testing.T) {
+	t.Run("delete non-existing bank unit", withCleanup(func(t *testing.T) {
+		assert.Equal(t, 4, len(Must(bankUnitRepo.GetAll(context.Background()))))
+
 		req := httptest.NewRequest("DELETE", "/NOTEXISTXXX", nil)
 		rec := httptest.NewRecorder()
 
 		r.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusOK, rec.Code)
-	})
+	}))
 
-	t.Run("invalid swift code", func(t *testing.T) {
+	t.Run("invalid swift code", withCleanup(func(t *testing.T) {
+
 		req := httptest.NewRequest("DELETE", "/INVALID", nil)
 		rec := httptest.NewRecorder()
 
@@ -248,14 +260,14 @@ func TestDeleteBankUnit(t *testing.T) {
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
 		assert.Equal(t, "swift code length must be 11 characters", errMsg.Message)
-	})
+	}))
 }
 
 func TestCreateBankUnit(t *testing.T) {
 	r := mux.NewRouter()
 	r.HandleFunc("/", handlers.CreateBankUnit(bankUnitRepo, countryRepo)).Methods("POST")
 
-	t.Run("create valid bank unit", func(t *testing.T) {
+	t.Run("create valid bank unit", withCleanup(func(t *testing.T) {
 		body := strings.NewReader(`{
 			"swiftCode": "DEUTDEFFXXX",
 			"countryISO2": "DE",
@@ -280,9 +292,10 @@ func TestCreateBankUnit(t *testing.T) {
 		bankUnit, err := bankUnitRepo.GetBySwiftCode(context.Background(), swiftcode)
 		assert.NoError(t, err)
 		assert.Equal(t, "DEUTDEFFXXX", bankUnit.SwiftCode.String())
-	})
+	}))
 
-	t.Run("create duplicate bank unit", func(t *testing.T) {
+	t.Run("create duplicate bank unit", withCleanup(func(t *testing.T) {
+
 		body := strings.NewReader(`{
 			"swiftCode": "BPKOPLPWXXX",
 			"countryISO2": "PL",
@@ -301,9 +314,9 @@ func TestCreateBankUnit(t *testing.T) {
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
 		assert.Equal(t, "duplicate swift code", errMsg.Message)
-	})
+	}))
 
-	t.Run("create with non-existing country", func(t *testing.T) {
+	t.Run("create with non-existing country", withCleanup(func(t *testing.T) {
 		body := strings.NewReader(`{
 			"swiftCode": "ABCDCNXXXXX",
 			"countryISO2": "CN",
@@ -322,9 +335,9 @@ func TestCreateBankUnit(t *testing.T) {
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
 		assert.Equal(t, "country does not exist, make sure ISO2 code is matching with the name", errMsg.Message)
-	})
+	}))
 
-	t.Run("invalid request body", func(t *testing.T) {
+	t.Run("invalid request body", withCleanup(func(t *testing.T) {
 		body := strings.NewReader(`invalid json`)
 
 		req := httptest.NewRequest("POST", "/", body)
@@ -336,7 +349,7 @@ func TestCreateBankUnit(t *testing.T) {
 		errMsg, err := handlers.Decode[handlers.ErrorResponse](rec.Result().Body)
 		assert.Nil(t, err)
 		assert.Equal(t, "invalid json data", errMsg.Message)
-	})
+	}))
 }
 
 func Must[T any](value T, err error) T {
@@ -349,5 +362,13 @@ func Must[T any](value T, err error) T {
 func exitIfErr(err error) {
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func withCleanup(fn func(t *testing.T)) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Cleanup(func() { resetTestData(context.Background()) })
+
+		fn(t)
 	}
 }
